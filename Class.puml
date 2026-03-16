@@ -1,0 +1,71 @@
+@startuml
+
+'Definir classes
+class User {
+    -id: int
+    -username: String
+    -password: String
+
+ +User(id: int, username: String, password: String)
+    +User(username: String, password: String)
+    +setId(id: int): void
+    +getId(): int
+    +getUsername(): String
+    +getPassword(): String
+}
+
+class TodoList {
+    -id: int
+    -name: String
+    -ownerId: int
+
+    +TodoList(id: int, name: String, ownerId: int)
+    +TodoList(name: String, ownerId: int)
+
+    +setId(id: int): void
+    +getListId(): int
+    +getName(): String
+    +getOwnerId(): int
+}
+
+class Todo {
+    -id: int
+    -description: String
+    -completed: boolean
+    -listId: int
+
+    +Todo(id: int, description: String, completed: boolean, listId: int)
+    +Todo(description: String, listId: int)
+
+    +setIsCompleted(completed: boolean): void
+    +setId(id: int): void
+    +getId(): int
+    +getDescription(): String
+    +isCompleted(): boolean
+    +getListId(): int
+}
+
+
+
+class SharedList {
+    -id: int
+    -listId: int
+    -sharedUserId: int
+}
+
+' Relações
+
+
+
+' Relações entre o sistema
+' 1 User pode ter várias todoList e cada 1 todoList pode ter vários todoitems
+User "1" *-- "*" TodoList
+TodoList "1" *-- "*" Todo
+
+
+' Um User pode ter acesso a muitas listas partilhadas (agregação)
+User "1" o-- "*" SharedList : partilha
+' Uma lista pode ser partilhada com muitos Users (agregação)
+TodoList "1" o-- "*" SharedList : partilhadaEm
+
+@enduml
