@@ -5,7 +5,6 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 jobs:
-  # Mantem igual
   security-scan:
     runs-on: ubuntu-latest
     permissions:
@@ -50,10 +49,10 @@ jobs:
           name: Generate artifact with Trivy result
           path: trivy-results.sarif
 
-  # construção e publicação da imagem (separado do job anterior)
+  # construção e publicação da imagem (separado do job)
   build-and-push:
     runs-on: ubuntu-latest
-    # Só corre se o job security-scan terminar com sucesso
+    # Só corre se o job security-scan terminar c sucesso
     needs: security-scan
     permissions:
       contents: read
@@ -76,6 +75,37 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      # construir e analisar a imagem ANTES de publicar
+      # Constrói apenas para AMD64 para poder analisar localmente
+      - name: Build Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64
+          push: false
+          load: true
+
+      # Analisa a imagem com Trivy.
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: ${{ steps.meta.outputs.tags }}
+          format: 'sarif'
+          output: 'trivy-image-results.sarif'
+
+      # Guarda os resultados como artefacto do pipeline
+      - name: Upload artifact to pipeline metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: Generate artifact with Trivy image result
+          path: trivy-image-results.sarif
+
+      # publica a imagem final (multi-arch)
       - name: Push Docker image (multi-arch)
         uses: docker/build-push-action@v5
         with:
